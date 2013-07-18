@@ -5,11 +5,67 @@
 #include <AL/alut.h>
 using namespace std;
 
+void errorCheck()
+{
+    switch(alGetError()){
+        case AL_NO_ERROR:
+            cout << "NO_ERROR" << endl;
+            break;
+        case AL_INVALID_NAME:
+            cout << "INVALID_NAME" << endl;
+            break;
+        case AL_INVALID_ENUM:
+            cout << "INVALID_ENUM" << endl;
+            break;
+        case AL_INVALID_VALUE:
+            cout << "INVALID_VALUE" << endl;
+            break;
+        case AL_INVALID_OPERATION:
+            cout << "INVALID_OPERATION" << endl;
+            break;
+        case AL_OUT_OF_MEMORY:
+            cout << "OUT_OF_MEMORY" << endl;
+            break;
+        default:
+            cout << "Unknown error code" << endl;
+            break;
+    }
+    return;
+}
+
+void sourceStatusCheck(ALint status)
+{
+    switch(status){
+        case AL_INITIAL:
+            cout << "AL_INITIAL" << endl;
+            break;
+        case AL_PLAYING:
+            cout << "AL_PLAYING" << endl;
+            break;
+        case AL_PAUSED:
+            cout << "AL_PAUSED" << endl;
+            break;
+        case AL_STOPPED:
+            cout << "AL_STOPPED" << endl;
+            break;
+        default:
+            cout << "Unknown source status code" << endl;
+            break;
+    }
+}
+
+void debugLine()
+{
+    cout << "========================" << endl;
+    return;
+}
+
 int main(int argc, char** argv)
 {
     alutInit(&argc, argv);
     ALuint buffer, source;
-    ALbyte buff[22050];
+    ALshort buff[22050];
+    ALint sample, status;
 
     ALCdevice* rec_device;
     ALCuint rec_f = 44100;
@@ -29,8 +85,6 @@ int main(int argc, char** argv)
     alGenBuffers(1, &buffer);
     alGenSources(1, &source);
     alcCaptureStart(rec_device);
-    ALint sample, status;
-    alSourcePlay(source);
     while(true){
         alcGetIntegerv(rec_device
                 , ALC_CAPTURE_SAMPLES
@@ -39,25 +93,29 @@ int main(int argc, char** argv)
         alcCaptureSamples(rec_device
                 , (ALCvoid *)buff
                 , sample);
-        if(sample > 0){
-            cout << sample << endl;
+        alGetSourcei(source, AL_SOURCE_STATE, &status);
+        debugLine();
+        if(status == AL_INITIAL || status == AL_STOPPED){
+            alSourcei(source, AL_BUFFER, AL_NONE);
+        /*
+            for(int i=0; i<sample; i++){
+                cout << buff[i] << " ";
+            }
+            */
+            alBufferData(buffer
+                    , AL_FORMAT_MONO16
+                    , buff
+                    , sample * 2
+                    , rec_f);
+            alSourcei(source, AL_BUFFER, buffer);
+            cout << "set buffer" << endl;
         }
-        alBufferData(buffer
-                , AL_FORMAT_MONO16
-                , buff
-                , sample
-                , rec_f);
-        alSourcei(source, AL_BUFFER, buffer);
-        alSourcei(source, AL_LOOPING, AL_TRUE);
         alGetSourcei(source, AL_SOURCE_STATE, &status);
         if(status != AL_PLAYING){
-            for(int i=0; i<sample; i++){
-                cout << (int)buff[i] << " ";
-            }
-            cout << "Not Playing " << sample << endl;
             alSourcePlay(source);
         }
-        alutSleep(1);
+        errorCheck();
+        alutSleep(0.04);
     }
     alcCaptureStop(rec_device);
     alcCaptureCloseDevice(rec_device);
@@ -70,6 +128,8 @@ int main(int argc, char** argv)
             , AL_FORMAT_MONO16
             , data
             , freq/Hz * sizeof(ALshort), freq);
+    alSourcei(source, AL_BUFFER, buffer);
+    alSourcei(source, AL_LOOPING, AL_TRUE);
     alSourcePlay(source);
     alutSleep(2);
     return 0;
