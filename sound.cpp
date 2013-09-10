@@ -6,8 +6,8 @@
 #include <OpenAL/al.h>
 #include <OpenAL/alc.h>
 #elif __linux__
+#include <AL/al.h>
 #include <AL/alc.h>
-#include <AL/alut.h>
 #endif
 
 using namespace std;

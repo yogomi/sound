@@ -1,13 +1,13 @@
 UNAME = $(shell uname)
 
 ifeq ($(UNAME),Linux)
-LDFLAGS=-L/usr/lib -L/usr/lib/x86_64-linux-gnu
+LDFLAGS=-L/usr/lib -L/usr/lib/x86_64-linux-gnu -lopenal
 endif
 ifeq ($(UNAME),Darwin)
 LDFLAGS=-framework OpenAL
 endif
 
 all:
-	$(CXX) ${LDFLAGS} sound.cpp -o sound
+	$(CXX) sound.cpp -o sound ${LDFLAGS}
 
 .PHONY: all clean dependents
