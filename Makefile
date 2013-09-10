@@ -1,7 +1,13 @@
+UNAME = $(shell uname)
 
-LDFLAGS='-L/usr/lib -L/usr/lib/x86_64-linux-gnu'
+ifeq ($(UNAME),Linux)
+LDFLAGS=-L/usr/lib -L/usr/lib/x86_64-linux-gnu
+endif
+ifeq ($(UNAME),Darwin)
+LDFLAGS=-framework OpenAL
+endif
 
 all:
-	g++ ${LDFLAGS} sound.cpp -o sound -lalut
+	$(CXX) ${LDFLAGS} sound.cpp -o sound
 
 .PHONY: all clean dependents

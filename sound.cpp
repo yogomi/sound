@@ -1,8 +1,15 @@
 #include <iostream>
 #include <string.h>
+#include <time.h>
 #include <cmath>
+#ifdef __APPLE__
+#include <OpenAL/al.h>
+#include <OpenAL/alc.h>
+#elif __linux__
 #include <AL/alc.h>
 #include <AL/alut.h>
+#endif
+
 using namespace std;
 
 #define BUFFER_SIZE 3
@@ -123,13 +130,17 @@ void deque_buffer(ALuint source, struct BUFFER &buffer)
 
 int main(int argc, char** argv)
 {
-    alutInit(&argc, argv);
     ALuint source;
     struct BUFFER buffer;
     ALshort buff[22050];
     ALint sample, status;
+    struct timespec sleep_time;
+    sleep_time.tv_sec = 0;
+    sleep_time.tv_nsec = 50 * 1000 * 1000;
 
     ALCdevice* rec_device;
+    ALCdevice* speaker_device;
+    ALCcontext* context;
     ALCsizei bufsize = 1024;
     const ALchar *pDeviceList = alcGetString(NULL, ALC_CAPTURE_DEVICE_SPECIFIER);
     cout << "device list" << endl;
@@ -141,6 +152,10 @@ int main(int argc, char** argv)
     rec_device = alcCaptureOpenDevice(NULL, rec_f
             , AL_FORMAT_MONO16
             , bufsize);
+    speaker_device = alcOpenDevice(NULL);
+    context = alcCreateContext(speaker_device, NULL);
+    alcMakeContextCurrent(context);
+
     if(alGetError() != AL_NO_ERROR){
         return 0;
     }
@@ -164,7 +179,7 @@ int main(int argc, char** argv)
             alSourcePlay(source);
         }
         errorCheck();
-        alutSleep(0.05);
+        nanosleep(&sleep_time, NULL);
     }
     alcCaptureStop(rec_device);
     alcCaptureCloseDevice(rec_device);
@@ -180,7 +195,11 @@ int main(int argc, char** argv)
     alSourcei(source, AL_BUFFER, buffer.buffer[0]);
     alSourcei(source, AL_LOOPING, AL_TRUE);
     alSourcePlay(source);
-    alutSleep(2);
+    sleep(2);
+    alSourceStop(source);
+    alcMakeContextCurrent(NULL);
+    alcDestroyContext(context);
+    alcCloseDevice(speaker_device);
     return 0;
 }
 
